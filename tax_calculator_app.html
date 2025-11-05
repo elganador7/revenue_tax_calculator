@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corporate Tax Rate Calculator</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .control-group {
+            margin-bottom: 30px;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .value-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.95em;
+            color: #666;
+        }
+
+        .current-value {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .formula-display {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .formula-display h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+
+        .formula-display .formula {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 1em;
+            color: #333;
+            line-height: 2;
+        }
+
+        .formula-item {
+            margin: 15px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .formula-label {
+            font-size: 0.75em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .formula-math {
+            font-size: 1.3em;
+            color: #000;
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+
+        .formula-note {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+            font-style: normal;
+        }
+
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            margin: 0 3px;
+        }
+
+        .fraction .numerator {
+            display: block;
+            border-bottom: 2px solid #000;
+            padding: 2px 8px;
+            font-size: 0.95em;
+        }
+
+        .fraction .denominator {
+            display: block;
+            padding: 2px 8px;
+            font-size: 0.95em;
+        }
+
+        .stats-box {
+            background: white;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .stats-box h3 {
+            color: #28a745;
+            margin-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .chart-container {
+            padding: 30px;
+        }
+
+        #chart {
+            width: 100%;
+            height: 500px;
+            margin-bottom: 30px;
+        }
+
+        #chart-total {
+            width: 100%;
+            height: 500px;
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .reset-button:hover {
+            background: #5568d3;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                border-right: none;
+                border-bottom: 1px solid #e0e0e0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Corporate Tax Rate Calculator</h1>
+            <p>Interactive comparison of exponential and quadratic tax formulas</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="g-slider">G (Billions USD) - Controls H × C</label>
+                    <input type="range" id="g-slider" min="50" max="500" value="150" step="10">
+                    <div class="value-display">
+                        <span>$50B</span>
+                        <span class="current-value" id="g-value">$150B</span>
+                        <span>$500B</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="h-slider">H (Billions USD)</label>
+                    <input type="range" id="h-slider" min="10" max="200" value="75" step="5">
+                    <div class="value-display">
+                        <span>$10B</span>
+                        <span class="current-value" id="h-value">$75B</span>
+                        <span>$200B</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label for="c-slider">C (Constant)</label>
+                    <input type="range" id="c-slider" min="0.5" max="5" value="2" step="0.1">
+                    <div class="value-display">
+                        <span>0.5</span>
+                        <span class="current-value" id="c-value">2.0</span>
+                        <span>5.0</span>
+                    </div>
+                </div>
+
+                <div class="formula-display">
+                    <h3>📐 Marginal Tax Rate</h3>
+                    <div class="formula">
+                        <div class="formula-item">
+                            <div class="formula-label">Exponential</div>
+                            <div class="formula-math">
+                                R = 
+                                <span class="fraction">
+                                    <span class="numerator">e<sup>x/H</sup> − 1</span>
+                                    <span class="denominator">e<sup>C</sup> − 1</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="formula-item">
+                            <div class="formula-label">Quadratic</div>
+                            <div class="formula-math">
+                                R = 
+                                <span class="fraction">
+                                    <span class="numerator">x</span>
+                                    <span class="denominator">G</span>
+                                </span>²
+                            </div>
+                            <div class="formula-note">where G = H × C</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="formula-display" style="border-color: #28a745;">
+                    <h3 style="color: #28a745;">📊 Total Tax Rate</h3>
+                    <div class="formula">
+                        <div class="formula-item" style="border-left-color: #28a745;">
+                            <div class="formula-label">Exponential</div>
+                            <div class="formula-math">
+                                T = 
+                                <span class="fraction">
+                                    <span class="numerator">
+                                        <span class="fraction">
+                                            <span class="numerator">H(e<sup>x/H</sup> − 1)</span>
+                                            <span class="denominator">x</span>
+                                        </span>
+                                        − 1
+                                    </span>
+                                    <span class="denominator">e<sup>C</sup> − 1</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="formula-item" style="border-left-color: #28a745;">
+                            <div class="formula-label">Quadratic</div>
+                            <div class="formula-math">
+                                T = 
+                                <span class="fraction">
+                                    <span class="numerator">x²</span>
+                                    <span class="denominator">3G²</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="formula-display">
+                    <h3>🎯 Current Parameters</h3>
+                    <div class="formula">
+                        <strong>H:</strong> <span id="param-h">$75B</span><br>
+                        <strong>C:</strong> <span id="param-c">2.0</span><br>
+                        <strong>G:</strong> <span id="param-g">$150B</span>
+                    </div>
+                </div>
+
+                <div class="stats-box">
+                    <h3>📊 Key Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Revenue Limit (Exp):</span>
+                        <span class="stat-value" id="stat-limit-exp">$150B</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Revenue Limit (Quad):</span>
+                        <span class="stat-value" id="stat-limit-quad">$150B</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rate at $50B (Exp):</span>
+                        <span class="stat-value" id="stat-50-exp">14.83%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rate at $50B (Quad):</span>
+                        <span class="stat-value" id="stat-50-quad">11.11%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rate at $100B (Exp):</span>
+                        <span class="stat-value" id="stat-100-exp">43.73%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rate at $100B (Quad):</span>
+                        <span class="stat-value" id="stat-100-quad">44.44%</span>
+                    </div>
+                </div>
+
+                <button class="reset-button" onclick="resetDefaults()">Reset to Defaults</button>
+            </div>
+
+            <div class="chart-container">
+                <div id="chart"></div>
+                <div id="chart-total"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get slider elements
+        const gSlider = document.getElementById('g-slider');
+        const hSlider = document.getElementById('h-slider');
+        const cSlider = document.getElementById('c-slider');
+        const gValue = document.getElementById('g-value');
+        const hValue = document.getElementById('h-value');
+        const cValue = document.getElementById('c-value');
+        
+        // Flag to prevent infinite loops when updating sliders
+        let isUpdating = false;
+
+        // Tax rate calculation functions
+        function marginalRateExponential(revenue, H, C) {
+            return (Math.exp(revenue / H) - 1) / (Math.exp(C) - 1);
+        }
+
+        function marginalRateQuadratic(revenue, G) {
+            return Math.pow(revenue / G, 2);
+        }
+
+        function totalRateExponential(revenue, H, C) {
+            if (revenue === 0) return 0;
+            return ((H * (Math.exp(revenue / H) - 1) / revenue) - 1) / (Math.exp(C) - 1);
+        }
+
+        function totalRateQuadratic(revenue, G) {
+            return Math.pow(revenue, 2) / (3 * Math.pow(G, 2));
+        }
+
+        function findRevenueLimitExponential(H, C, targetRate = 1.0) {
+            return H * Math.log(targetRate * (Math.exp(C) - 1) + 1);
+        }
+
+        function findRevenueLimitQuadratic(G, targetRate = 1.0) {
+            return G * Math.sqrt(targetRate);
+        }
+
+        function updateChart(skipSliderUpdate = false) {
+            const H = parseFloat(hSlider.value) * 1e9; // Convert to actual dollars
+            const C = parseFloat(cSlider.value);
+            const G = parseFloat(gSlider.value) * 1e9;
+
+            // Update display values
+            gValue.textContent = `$${(G / 1e9).toFixed(0)}B`;
+            hValue.textContent = `$${(H / 1e9).toFixed(0)}B`;
+            cValue.textContent = C.toFixed(1);
+            document.getElementById('param-h').textContent = `$${(H / 1e9).toFixed(0)}B`;
+            document.getElementById('param-c').textContent = C.toFixed(1);
+            document.getElementById('param-g').textContent = `$${(G / 1e9).toFixed(0)}B`;
+
+            // Calculate revenue limits
+            const maxRevenueExp = findRevenueLimitExponential(H, C, 1.0);
+            const maxRevenueQuad = findRevenueLimitQuadratic(G, 1.0);
+            const maxRevenue = Math.max(maxRevenueExp, maxRevenueQuad);
+
+            // Generate data points
+            const numPoints = 200;
+            const revenues = [];
+            const marginalExponentialRates = [];
+            const marginalQuadraticRates = [];
+            const totalExponentialRates = [];
+            const totalQuadraticRates = [];
+
+            for (let i = 0; i <= numPoints; i++) {
+                const revenue = (i / numPoints) * maxRevenue;
+                revenues.push(revenue / 1e9); // Convert to billions for display
+                
+                const margExpRate = marginalRateExponential(revenue, H, C) * 100;
+                const margQuadRate = marginalRateQuadratic(revenue, G) * 100;
+                const totExpRate = totalRateExponential(revenue, H, C) * 100;
+                const totQuadRate = totalRateQuadratic(revenue, G) * 100;
+                
+                marginalExponentialRates.push(margExpRate);
+                marginalQuadraticRates.push(margQuadRate);
+                totalExponentialRates.push(totExpRate);
+                totalQuadraticRates.push(totQuadRate);
+            }
+
+            // Create traces for marginal tax rate chart
+            const marginalTrace1 = {
+                x: revenues,
+                y: marginalExponentialRates,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Exponential Formula',
+                line: {
+                    color: '#1f77b4',
+                    width: 3
+                }
+            };
+
+            const marginalTrace2 = {
+                x: revenues,
+                y: marginalQuadraticRates,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Quadratic Formula',
+                line: {
+                    color: '#ff7f0e',
+                    width: 3,
+                    dash: 'dash'
+                }
+            };
+
+            // Create traces for total tax rate chart
+            const totalTrace1 = {
+                x: revenues,
+                y: totalExponentialRates,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Exponential Formula',
+                line: {
+                    color: '#1f77b4',
+                    width: 3
+                }
+            };
+
+            const totalTrace2 = {
+                x: revenues,
+                y: totalQuadraticRates,
+                type: 'scatter',
+                mode: 'lines',
+                name: 'Quadratic Formula',
+                line: {
+                    color: '#ff7f0e',
+                    width: 3,
+                    dash: 'dash'
+                }
+            };
+
+            // Layout for marginal rate chart
+            const marginalLayout = {
+                title: {
+                    text: 'Marginal Tax Rate',
+                    font: { size: 24 }
+                },
+                xaxis: {
+                    title: 'Company Revenue (Billions USD)',
+                    gridcolor: '#e0e0e0'
+                },
+                yaxis: {
+                    title: 'Marginal Tax Rate (%)',
+                    gridcolor: '#e0e0e0',
+                    range: [0, 110]
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    x: 0.02,
+                    y: 0.98,
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    bordercolor: 'rgba(0,0,0,0.2)',
+                    borderwidth: 1
+                },
+                plot_bgcolor: '#fafafa',
+                paper_bgcolor: 'white',
+                margin: { t: 60, r: 40, b: 60, l: 60 }
+            };
+
+            // Layout for total rate chart
+            const totalLayout = {
+                title: {
+                    text: 'Total (Average) Tax Rate',
+                    font: { size: 24 }
+                },
+                xaxis: {
+                    title: 'Company Revenue (Billions USD)',
+                    gridcolor: '#e0e0e0'
+                },
+                yaxis: {
+                    title: 'Total Tax Rate (%)',
+                    gridcolor: '#e0e0e0'
+                },
+                hovermode: 'x unified',
+                showlegend: true,
+                legend: {
+                    x: 0.02,
+                    y: 0.98,
+                    bgcolor: 'rgba(255,255,255,0.8)',
+                    bordercolor: 'rgba(0,0,0,0.2)',
+                    borderwidth: 1
+                },
+                plot_bgcolor: '#fafafa',
+                paper_bgcolor: 'white',
+                margin: { t: 60, r: 40, b: 60, l: 60 }
+            };
+
+            // Plot both charts
+            Plotly.newPlot('chart', [marginalTrace1, marginalTrace2], marginalLayout, {responsive: true});
+            Plotly.newPlot('chart-total', [totalTrace1, totalTrace2], totalLayout, {responsive: true});
+
+            // Update statistics
+            document.getElementById('stat-limit-exp').textContent = `$${(maxRevenueExp / 1e9).toFixed(1)}B`;
+            document.getElementById('stat-limit-quad').textContent = `$${(maxRevenueQuad / 1e9).toFixed(1)}B`;
+            
+            const rate50Exp = marginalRateExponential(50e9, H, C) * 100;
+            const rate50Quad = marginalRateQuadratic(50e9, G) * 100;
+            const rate100Exp = marginalRateExponential(100e9, H, C) * 100;
+            const rate100Quad = marginalRateQuadratic(100e9, G) * 100;
+            
+            document.getElementById('stat-50-exp').textContent = `${rate50Exp.toFixed(2)}%`;
+            document.getElementById('stat-50-quad').textContent = `${rate50Quad.toFixed(2)}%`;
+            document.getElementById('stat-100-exp').textContent = `${rate100Exp.toFixed(2)}%`;
+            document.getElementById('stat-100-quad').textContent = `${rate100Quad.toFixed(2)}%`;
+        }
+
+        function resetDefaults() {
+            gSlider.value = 150;
+            hSlider.value = 75;
+            cSlider.value = 2.0;
+            updateChart();
+        }
+
+        // Event listeners with constraint enforcement
+        // When G changes, adjust H (keep C constant)
+        gSlider.addEventListener('input', function() {
+            if (isUpdating) return;
+            isUpdating = true;
+            
+            const newG = parseFloat(gSlider.value);
+            const currentC = parseFloat(cSlider.value);
+            const newH = newG / currentC;
+            
+            // Clamp H to valid range
+            const clampedH = Math.max(10, Math.min(200, newH));
+            hSlider.value = clampedH;
+            
+            // If H was clamped, adjust C to maintain G
+            if (clampedH !== newH) {
+                const adjustedC = newG / clampedH;
+                cSlider.value = Math.max(0.5, Math.min(5, adjustedC));
+            }
+            
+            isUpdating = false;
+            updateChart();
+        });
+
+        // When H changes, adjust C to maintain G
+        hSlider.addEventListener('input', function() {
+            if (isUpdating) return;
+            isUpdating = true;
+            
+            const currentG = parseFloat(gSlider.value);
+            const newH = parseFloat(hSlider.value);
+            const newC = currentG / newH;
+            
+            // Clamp C to valid range
+            const clampedC = Math.max(0.5, Math.min(5, newC));
+            cSlider.value = clampedC;
+            
+            // If C was clamped, adjust G to maintain H*C
+            if (clampedC !== newC) {
+                const adjustedG = newH * clampedC;
+                gSlider.value = Math.max(50, Math.min(500, adjustedG));
+            }
+            
+            isUpdating = false;
+            updateChart();
+        });
+
+        // When C changes, adjust H to maintain G
+        cSlider.addEventListener('input', function() {
+            if (isUpdating) return;
+            isUpdating = true;
+            
+            const currentG = parseFloat(gSlider.value);
+            const newC = parseFloat(cSlider.value);
+            const newH = currentG / newC;
+            
+            // Clamp H to valid range
+            const clampedH = Math.max(10, Math.min(200, newH));
+            hSlider.value = clampedH;
+            
+            // If H was clamped, adjust G to maintain H*C
+            if (clampedH !== newH) {
+                const adjustedG = clampedH * newC;
+                gSlider.value = Math.max(50, Math.min(500, adjustedG));
+            }
+            
+            isUpdating = false;
+            updateChart();
+        });
+
+        // Initial chart
+        updateChart();
+    </script>
+</body>
+</html>
